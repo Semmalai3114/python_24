@@ -1,0 +1,113 @@
+install docker and kubernets on both master and worker vm
+copy paste token provided by mater vm
+run the token in worker to connect master controler
+in master:
+
+kubectl get nodes
+kubectl run nginx-pod --image=nginx(create pods)
+kubectl run nginx1 --image=nginx -o yaml --dry-run=client(note create but show the status of pod with yaml)
+
+kubectl run nginx1 --image=nginx -o yaml > pads.yaml(save pods cods to yaml file)
+
+entry and cmd defferents:
+create Dockerfile:
+FROM ubuntu
+ENTRYPOINT ["/bin/echo"]
+CMD ["hello","world"]
+ docker build -t imagename .
+docker run imagename -->hello world
+docker run imagename how are you! -->how are you! (override the cmd)
+
+in kubernets:
+kubectl run echo1 --image=busybox:latest --restart=Never --command  -- echo "hello world"
+manifest file:
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+spec:
+  containers:
+    - name: nginx-container
+      image: nginx
+      command: ["/bin/echo"]
+      args: ["hello", "world"]
+
+
+kubectl logs nginx-pod
+
+multi-command
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+spec:
+  containers:
+    - name: nginx-container
+      image: busybox
+      command:
+        - ping
+        - -c
+        - "60"
+        - 8.8.8.8
+
+to see yaml structure
+kubectl run echo5 --image=busybox:latest --dry-run=client -o yaml --restart=Never --command  -- echo "hello world"
+
+adding label:
+kubectl lable pod pod-name env=dev
+
+file selected pods using labels:
+kubectl get pods -l env=pord 
+
+see labelin yaml syntax:
+ kubectl label pod echo5 env=pro  --dry-run=client -o yaml
+
+
+replicaSet;
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: frontend
+spec:
+  # modify replicas according to your case
+  replicas: 3
+  selector:
+    matchLabels:
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        tier: frontend
+    spec:
+      containers:
+      - name: php-redis
+        image: us-docker.pkg.dev/google-samples/containers/gke/gb-frontend:v5
+kubectl apply -f .yaml
+kubectl get rs
+kubectl get pods
+kubectl delete pod podname(this will recreated new pod)
+
+increassing setsize(vm count);
+kubectl scale --replicas=5 rs/rs-name
+
+decrease scale:
+kubectl scale --replicas=1 rs/rs-name
+
+deployement:
+kubectl apply -f deployment.yaml
+kubectl get deployment
+kubectl get rs 
+kubectl get pods
+
+history:
+kubectl rollout history deployment deployement-name
+
+previous version:
+kubectl undo rollout deployment deployment-name 
+
+select-version;
+kubectl undo rollout deployment deployment-name --to-revision=2
+
+

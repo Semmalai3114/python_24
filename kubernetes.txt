@@ -1,0 +1,282 @@
+DFFERENCE BETTWEEN CONTAINER AND PODS
+a pod can contain one or more docker containers that share the same network namespace and storage volumes
+
+docker commands                kubernetes commands                  purpose 
+docker run nginx               kubectl run nginx --image=nginx        create and run a container/pod
+docker ps                        kubectl get pods                     list running containers/pods
+docker logs<container>          kubectl logs<pod>                     view logs
+docker inspect <container>      kubectl describe pod <pod -name>      get detailed info
+docker exec -it<container> bash kubectl exec -it<pod-name> --bash     execute interactive shell
+docker rm <container>      kubectl delete pod <pod-name>              remove container /pod
+
+
+
+
+pods always run on a nods
+a node is a worker machine in kubernetes
+each node is managed by the kubernetes control plane 
+a node can have multiple pods
+
+
+two way creating images
+1.kubectl run nginx --image=nginx
+2.create pod.yaml file
+example:
+apiVersion: v1
+kind:pod
+metadata:
+  name: nginx(pod name)
+spec:
+  containers:
+  - name:nginx-container(containe name)
+    image:nginx
+
+cmd:kubectl aplly -f pod.yaml
+kubectl delete -f pod
+
+kubectl api-resources(to see available rt in kubernets)
+cnd :kubectl run nginx --image=nginx --dry-run=client
+--dry-run=client opthion allows you to validate a kubernetes resource definition without actuall applying it to the cluster
+
+cnd :kubectl run nginx --image=nginx -o yaml
+
+the command doesnt just create the pod in the cluster ,it also print the yaml configuration of the created resource to your terminal.
+
+
+cnd :kubectl run nginx --image=nginx --dry-run=client -o yaml(both cmd).
+  
+
+add multi name and image name
+
+login multi-container
+kubectl exec -t <containe name> -c <selected container name> --bash
+
+
+entrypoint vs cmd in dockerfile 
+
+example :
+FROM ubuntu
+ENTRYPOINT ["/bin/echo"]
+CMD ["hello","world"]
+
+if we run docker run demo output-->hello world
+if we run docker run demo how are you? ,output-->how are you?.(entry point will over ride the cmd)
+
+after execute docker cmd container will exit(not in running state)
+example in yamle 
+apiVersion: v1
+kind:pod
+metadata:
+  name: nginx(pod name)
+spec:
+  containers:
+  - name:nginx-container(containe name)
+    image:nginx
+    commands:["/bin/echo"]
+    args:["hello","world"]
+
+
+commands and arguments:
+kubectl run nginx --image=nginx --command --<command><args>
+
+example:
+kubectl run nginx --image=busybox:latest --command -- echo "hello from kubectl run!"
+
+kubectl logs nginx
+
+
+for multi-commands
+command:["/bin/echo","hello","world"]
+or 
+command:
+   - "echo hi"
+   - "ls" etc
+
+cmd : kubectl run custom-pod --image=busybox:latest --dry-run=client -o yaml --command --echo "hello world!"
+
+command -->means specify the entrypoints or main executable that will run in the container
+args--> means to define the arguments or parameters that are passed to the command.
+
+kubectl explain pod 
+kubectl explain pod.spec(for specific topics . topic name)
+
+expose port 
+
+apiVersion: v1
+kind:pod
+metadata:
+  name: nginx(pod name)
+spec:
+  containers:
+  - name:nginx-container(containe name)
+    image:nginx
+    commands:["/bin/echo"]
+    args:["hello","world"]
+    ports:
+	-containerPort:8080
+
+
+Adding lables to resource
+example : like add tags in aws(key value pair)---lable
+
+selecter: allow us to filter object based on lables
+
+kubectl get pods -l env=pord (env=dev)
+add-lables
+create pods 
+kubectl get pods
+kubectl get pods --show-labels
+kubectl lable pod pod-name env=dev
+
+kubectl label pod pod-1 env-(remove env)
+
+
+kubectl run nginx --image=nginx --dry-run=client -o yaml > label.yaml(label section under metadaya:)
+
+kubectl lable pods --all status=running(set namespace to all pods)
+
+
+ReplicaSet :
+A ReplicaSet's purpose is to maintain a stable set of relica pods runung at any given time(example if 3 pods running 1 get crashed it automaticall recreate pods with same requirement maintain to all time)
+
+kubectl apply -f replicaset.yaml
+kubectl get replicaset
+kubectl get pods
+
+increase the pods 
+kubectl scale --replicas=5 rs/(lable-name of pods)frontend-replicaset
+decrease the pods
+kubectl scale --replicas=1 rs/frontend-replicaset
+
+template modification:
+image:nginx-latest -->http:latest
+kubectl apply -f replicaset.yml(update succwssfully but currently running pods not update check but seperated names)
+kubectl get pods 
+kubectl describe rs pods name
+kubectl delete pods pods name(by single pods name)
+
+no rollback mechanism for reverting to previous configuration
+
+
+external pods  override
+
+kubectl run external-pod --image=nginx
+kubectl label pod external-pod app=webserver
+kubectl label pod --show-labels
+kubectl apply -f replicaset.yml
+kubectl get pods
+kubectl delete -f replicaset.yaml
+
+run firt 2 cmd 
+after add lables in yaml file
+kubectl get pods
+kubectl label pod --show-labels(create seperate new pods)
+
+
+deployement:
+it is higher-level abstraction built on top of replicasets
+it not only manage rs but also provides advance feature like rolling updates,rollbacks,and versioning
+
+
+kubectl create deployment nginx-deployment --image=nginx
+kubectl get deployment
+kubectl get rs
+kubectl create deployment nginx-deployement --image=nginx --dry-run=client -o yaml > deployment.yaml 
+
+kubectl set image --help
+kubectl set image deployment/nginx-deployment nginx=httpd:latest
+kubectl rollout history deployment nginx-deployment
+kubectl get rs(check new pods)
+
+
+kubectl rollout undo deployment nginx-deplo yment
+kubectl rollout history deployment nginx-deployment
+kubectl rollout undo deployment nginx-deployment --to-revision=2(particular virsion)
+
+kubectl get rs
+
+nods 
+node selecter
+
+in yaml file 
+ spec:
+      containers:
+      - name: php-redis
+        image: us-docker.pkg.dev/google-samples/containers/gke/gb-frontend:v5
+      nodeSelector:
+	size:large
+
+kubectl get nodes 
+kubectl label node node-name size=large
+kubectl describe node node-name(see new label will add label section)
+
+ kubectl label node node-name size-(unlabeled to node)
+
+
+DaemonSet :
+it can ensures that all nodes run a copy of a pod.
+whenever new nodes are are added to the cluster,pods will be created in them 
+
+example :anti-virus must be copy or builed in every new pods created(like user-data in aws)
+
+
+node affinity:
+
+
+Requests and Limits:
+they are two ways in which we can control the amount of resource that can be assigned to a pod(resource like cpu and memory)
+
+
+priority class;
+a cluster with capacity of 2 pods suddenly want to add new pords to that cluster ,the kubectl will remove the pods with low priority mentioned.
+
+sidecare pattern;
+it is nothing but running multiple container as part of a pod in single node which connect each other.
+
+
+ambassador pattern:
+it is type of sidecar pattern were the second container is primarily used to proxy the request.
+
+
+init container;
+
+
+kubernetes service:
+the pods that get created in the worker node have a ip pravet associated with them.
+another pod in same cluster can communicate with each other using private ip
+
+example :
+1 pods and  2 pods under or inside the worker node(1 &2 communicate using their private ip)
+
+in between 1 and 2 pods service layer act as gateway that distributrs incoming trafic between its endpoints.
+
+if any deployment to run app that deployment can create and destroy pods dynamically ,service can find the
+latest set of pods and route the traffice accordingly.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+kubectl get pods -l env=pord(selecter methode)(env!=pord)
