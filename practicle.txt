@@ -96,10 +96,13 @@ decrease scale:
 kubectl scale --replicas=1 rs/rs-name
 
 deployement:
+kubectl create deployment nginx-deploy  --image=nginx --replicas=3 
 kubectl apply -f deployment.yaml
 kubectl get deployment
 kubectl get rs 
 kubectl get pods
+reduce or increace scale
+kubectl scale deployment nginx-deploy --replicas=0
 
 history:
 kubectl rollout history deployment deployement-name
@@ -107,7 +110,62 @@ kubectl rollout history deployment deployement-name
 previous version:
 kubectl undo rollout deployment deployment-name 
 
-select-version;
-kubectl undo rollout deployment deployment-name --to-revision=2
+
+node:
+kubectl create deployment nginx-deploy  --image=nginx --replicas=3 --dry-run=client > nginx-deploy.yaml
+kubectl apply nginx-deploy.yaml
+kubectl get pods -o wide(pods will created in separate nodes)
+ 
+
+remove nodes
+
+kubectl delete node node-name (pod in that node will delete and recreate in other live node with free space )
+
+nodeSelectore:(under in template -->spec -->nodeSelector:)
+
+kubectl label node node-name size=small
+
+
+template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: nginx-deploy
+    spec:
+      nodeSelector:
+	size: small(create pods in particular nodes using label name)
+      containers:
+      - image: nginx
+        imagePullPolicy: Always
+        name: nginx
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+
+
+kubectl apply nginx-deploy.yaml
+
+kubectl get pods -o wide
+ 
+
+deamonset(like user-data in aws used for anti-virus agent ,log collector agents,monitor agents)
+kubectl apply -f deamonset.yaml
+kubectl get daemonset
+
+after this when ever install  vm auto-matically deamonset will create this to new vm
+
+
+
+
+
+
+
+
+
 
 
