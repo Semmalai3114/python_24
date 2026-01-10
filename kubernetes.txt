@@ -196,6 +196,32 @@ kubectl rollout undo deployment nginx-deployment --to-revision=2(particular virs
 kubectl get rs
 
 nods 
+single worker node not have enough resource(cpu,memory) to handle all the load of all the pods
+
+multiple worker-nodes
+addinfg more worker-nodes allow you to distribute the workload across the worker nodes.
+
+benefits of multi-nodes
+if 1 worker-node fails,the applications running on it will become unavailable.(all pods in single worker)
+with multi-worker-nodes,the failed application will reinstall on other nodes with good setup
+
+cmd:
+kubectl get nodes
+
+removing node in safe mode:
+kubectl drain worker-node1 --ignore-daemonsets --delete-emptydir-data
+kubectl delete node worker-node1
+
+remove in deleted nodes
+sudo kubeadm reset -f
+sudo rm -rf /etc/kubernetes
+sudo rm -rf /var/lib/kubelet
+sudo rm -rf /var/lib/cni
+sudo rm -rf /etc/cni
+sudo systemctl restart containerd kubelet
+
+rejoin using token
+
 node selecter
 
 in yaml file 
